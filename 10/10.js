@@ -11,7 +11,8 @@ fs.readFile('./data.js', 'utf8', (err, data) => {
     }
     return p
   }, []);
-  getLOS(formatted);
+  const orderedPoints = getLOS(formatted);
+  getTwoHundo(orderedPoints)
 
 });
 // const angle1 = Math.atan2(y, x) * 180 / Math.PI;
@@ -21,24 +22,46 @@ const getAngle = (a, b) => {
 };
 
 const getLOS = (array) => {
-  let location = []
-  const stuff = array.reduce((max, node, i, map) => {
-    const angles = map.reduce((dict,c) => {
-      const angle = getAngle(node, c);
-      console.log(angle);
-      dict[angle] = true;
-      return dict;
-    }, {})
-    if(Object.keys(angles).length> max){
-      location = node
-      max = Object.keys(angles).length;
+  const origin = [11,13];
+
+  const angles = array.reduce((dict,c) => {
+    let angle = getAngle(origin, c) + 90;
+    if(angle < 0){
+      angle = angle + 360;
     }
-    return max
-  }, 0);
-  console.log(location);
-  console.log(stuff);
+    const dist = getDistance(origin,c)
+    if(dict[angle]){
+      dict[angle].push([...c, dist])
+    } else {
+      dict[angle]= [angle, [...c, dist]];
+    }
+    return dict;
+  }, {});
+  const vals = Object.values(angles).sort((a,b)=>{
+    return a[0] - b[0];
+  });
+  vals.forEach((arr)=>{
+    arr.shift();
+    arr.sort((a,b)=>{
+      return a[3] - b[3];
+    })
+  })
+  return vals;
 };
 
-// console.log(getAngle([0,0], [2,2]));
-// console.log(getAngle([0,0], [3,3]));
-// console.log(getAngle([3,3], [0,0]));
+const getDistance = (p1,p2) =>{
+  const a = p1[0] - p2[0];
+  const b = p1[1] - p2[1];
+
+  return Math.sqrt( a*a + b*b );
+}
+
+const getTwoHundo = (array) => {
+  let current;
+  for (let i=0; i<200; i++){
+    const innerArray = array[i];
+    current = innerArray.shift()
+  }
+  console.log(current);
+}
+
