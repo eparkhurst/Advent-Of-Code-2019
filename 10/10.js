@@ -22,18 +22,17 @@ const getAngle = (a, b) => {
 };
 
 const getLOS = (array) => {
-  const origin = [11,13];
+  const origin = [26,36];
 
   const angles = array.reduce((dict,c) => {
     let angle = getAngle(origin, c) + 90;
     if(angle < 0){
       angle = angle + 360;
     }
-    const dist = getDistance(origin,c)
     if(dict[angle]){
-      dict[angle].push([...c, dist])
+      dict[angle].push(c)
     } else {
-      dict[angle]= [angle, [...c, dist]];
+      dict[angle]= [angle, c];
     }
     return dict;
   }, {});
@@ -42,19 +41,9 @@ const getLOS = (array) => {
   });
   vals.forEach((arr)=>{
     arr.shift();
-    arr.sort((a,b)=>{
-      return a[3] - b[3];
-    })
   })
   return vals;
 };
-
-const getDistance = (p1,p2) =>{
-  const a = p1[0] - p2[0];
-  const b = p1[1] - p2[1];
-
-  return Math.sqrt( a*a + b*b );
-}
 
 const getTwoHundo = (array) => {
   let current;
