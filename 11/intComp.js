@@ -131,6 +131,7 @@ class intComputer {
 
 
   runComp(input){
+    this.myOutput = [];
     this.input = input;
     let t = 0;
     while(this.program[this.n] !== 99){
@@ -138,13 +139,17 @@ class intComputer {
       const inc = this.codeDict[parsed.optCode](this.n, parsed);
       this.n += inc;
       t++
+      if (this.myOutput.length === 2) {
+        return this.myOutput;
+      }
     }
     if(t > 99998){
       console.log('error');
     }
     if(this.program[this.n] === 99) {
+      console.log('Hit');
       this.running = false;
-      this.myOutput.push('done');
+      return false
     }
     return this.myOutput;
   }
