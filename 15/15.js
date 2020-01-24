@@ -9,115 +9,13 @@ fs.readFile('./data', 'utf8', (err, data) => {
   runSim(program);
 });
 
+let oxGen;
+
 const runSim = (program) => {
   const comp = new intComputer(program);
-
-  let output = 0;
-  let n = 0;
-  let dir = 1;
-  const past = [];
-  let isRight = true;
-  const map = {0:{0:{ type: true, searched:false }}};
-  let currentLoc = {x:0,y:0};
-  let lastLoc = {x:0,y:0};
-
-
-  const updateLoc = (dir) => {
-    const attempt = {...currentLoc};
-    switch(dir) {
-      case 1:
-        attempt.y = currentLoc.y + 1;
-        break;
-      case 2:
-        attempt.y = currentLoc.y - 1;
-        break;
-      case 3:
-        attempt.x = currentLoc.x - 1;
-        break;
-      case 4:
-        attempt.x = currentLoc.x + 1;
-        break;
-      default:
-        console.log('ERROR');
-        break;
-    }
-    return attempt;
-  };
-
-  const updateMap = (attempt, hit) => {
-    if (map[attempt.x]) {
-      if(map[attempt.x][attempt.y]){
-        map[attempt.x][attempt.y].type = hit;
-      }else {
-        map[attempt.x][attempt.y] = { type:hit, searched: false };
-      }
-    } else {
-      map[attempt.x] = {[attempt.y]: { type:hit, searched: false }};
-    }
-  };
-
-  const checkLast = (dir) => {
-    if(map[lastLoc.x][lastLoc.y].searched){
-      return true;
-    }
-    try{
-      if(
-        map[lastLoc.x+1][lastLoc.y] &&
-        map[lastLoc.x-1][lastLoc.y] &&
-        map[lastLoc.x][lastLoc.y+1] &&
-        map[lastLoc.x][lastLoc.y-1]
-      ){
-        map[lastLoc.x][lastLoc.y].searched = true;
-        return true;
-      }
-    } catch (e) {
-      map[lastLoc.x][lastLoc.y].next = dir;
-      return false;
-    }
-    return false;
-  };
-
-
-  while(output !== 2 && n< 50) {
-    output = comp.runComp([dir])[0];
-    const attempt = updateLoc(dir);
-    if(output === 0){
-       updateMap(attempt, false);
-      if(past[past.length-1] === 1){
-        isRight = !isRight;
-      }
-    }else if (output === 1) {
-      updateMap(attempt, true);
-      if(!checkLast(dir)){
-        dir = getOpposite(dir);
-      };
-      lastLoc = currentLoc;
-      currentLoc = attempt;
-    }else if(output === 2){
-      console.log('Got It!!!');
-    }
-    dir = isRight ? turnRight(dir) : turnLeft(dir);
-    past.push(output);
-    n++;
-  }
-  console.log(map);
-  console.log(n);
-};
-
-const turnRight = (cur) => {
-  const dirs = [1,4,2,3];
-  if(dirs.indexOf(cur)===3){
-    return dirs[0]
-  };
-  return dirs[dirs.indexOf(cur)+1];
-};
-
-const turnLeft = (cur) => {
-  const dirs = [1,4,2,3];
-  if(dirs.indexOf(cur)===0){
-    return dirs[3]
-  };
-  return dirs[dirs.indexOf(cur)-1];
+  const tree = {root: new Node(null,null, false, true)};
+  tree.root.getSurroundings(comp);
+  getTime(oxGen);
 };
 
 const getOpposite = (dir) => {
@@ -125,7 +23,7 @@ const getOpposite = (dir) => {
     case 1:
       return 2;
     case 2:
-      return ;
+      return 1;
     case 3:
       return 4;
     case 4:
@@ -134,15 +32,80 @@ const getOpposite = (dir) => {
       console.log('ERROR');
       return;
   }
-}
+};
 
 class Node {
-  constructor(x,y,parent, last){
-    this.location = {x,y};
+  constructor(parent, last, final, isRoot){
+    this.isRoot = isRoot;
+    this.final = final || false;
     this.parent = parent;
-    this.checked=[last]
+    this.parentDir = last;
+    this.suroundings={[last]:'parent'};
+    this.children = [];
   }
   isFull(){
-    return this.checked.length === 4
+    return Object.keys(this.suroundings).length > 3;
   }
+  getSurroundings (intComp){
+    for(let i =1 ; i< 5; i++){
+      if(this.suroundings[i]===undefined){
+        const output = intComp.runComp([i])[0];
+        if(output===0){
+          this.suroundings[i]=false;
+        } else if(output===2){
+          this.suroundings[i]=true;
+          const newNode = new Node( this, getOpposite(i), true);
+          this.children.push(newNode);
+          oxGen = newNode;
+          newNode.getSurroundings(intComp)
+        }else {
+          this.suroundings[i]=true;
+          const newNode = new Node( this, getOpposite(i), false);
+          this.children.push(newNode);
+          newNode.getSurroundings(intComp)
+        }
+      }
+    }
+    if(this.isRoot){
+      return;
+    }
+    intComp.runComp([this.parentDir]);
+    return;
+  };
 }
+
+const getTime = (final)=>{
+  let parent = final.parent;
+  let childrenToCheck = [];
+  let mins = 0;
+  while(childrenToCheck.length || !parent.isRoot){
+    childrenToCheck = childrenToCheck.reduce((toCheck, child) =>{
+      toCheck.push(...child.children);
+      return toCheck
+    }, []);
+    if(parent.isRoot){
+      console.log('hey');
+    }else {
+      parent.parent.children = parent.parent.children.filter(c => c!== parent);
+      childrenToCheck.push(...parent.children);
+      parent = parent.parent;
+    }
+    mins++
+  }
+  console.log(mins);
+  return true;
+};
+
+// const checkComplete = (tree) => {
+//   const toCheck = [tree.root];
+//   while(toCheck.length){
+//     const node = toCheck.shift();
+//     if (!node.isFull()){
+//       console.log(node);
+//       return false;
+//     }
+//     toCheck.push(...node.children)
+//   }
+//   return true;
+// };
+

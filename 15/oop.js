@@ -15,14 +15,8 @@ const runSim = (program) => {
   let output = 0;
   let n = 0;
   let dir = 1;
-  const past = [];
-  let isRight = true;
-  const tree = {
-    root: new Node(0,0,null,null)
-  }
-  let currentLoc = {x:0,y:0};
-  let lastLoc = {x:0,y:0};
-
+  const tree = {root: new Node(0,0,null,1)};
+  let currentLoc = { x:0, y:0 };
 
   const updateLoc = (dir) => {
     const attempt = {...currentLoc};
@@ -46,80 +40,47 @@ const runSim = (program) => {
     return attempt;
   };
 
-  const updateMap = (attempt, hit) => {
-    if (map[attempt.x]) {
-      if(map[attempt.x][attempt.y]){
-        map[attempt.x][attempt.y].type = hit;
-      }else {
-        map[attempt.x][attempt.y] = { type:hit, searched: false };
+  let currentNode = tree.root;
+  let backTracking = false;
+
+  while(output !== 2 && n< 10000) {
+    output = comp.runComp([dir])[0];
+    if(output === 2){
+      const newNode = new Node(currentLoc.x, currentLoc.y, currentNode, getOpposite(dir), true);
+      currentNode.children.push(newNode);
+      currentNode=newNode;
+    } else if (output === 1){
+      currentNode.suroundings[dir]=true;
+      currentLoc = updateLoc(dir);
+      if(!backTracking){
+        const newNode = new Node(currentLoc.x, currentLoc.y, currentNode, getOpposite(dir));
+        currentNode.children.push(newNode);
+        currentNode = newNode;
+        dir = currentNode.getNextDir()
+      } else {
+       currentNode = currentNode.parent;
+       if(!currentNode.isFull()) backTracking = false;
+       dir = currentNode.getNextDir();
       }
     } else {
-      map[attempt.x] = {[attempt.y]: { type:hit, searched: false }};
-    }
-  };
-
-  const checkLast = (dir) => {
-    if(map[lastLoc.x][lastLoc.y].searched){
-      return true;
-    }
-    try{
-      if(
-        map[lastLoc.x+1][lastLoc.y] &&
-        map[lastLoc.x-1][lastLoc.y] &&
-        map[lastLoc.x][lastLoc.y+1] &&
-        map[lastLoc.x][lastLoc.y-1]
-      ){
-        map[lastLoc.x][lastLoc.y].searched = true;
-        return true;
+      currentNode.suroundings[dir]=false;
+      if(currentNode.isFull()){
+        backTracking = true;
+        dir = currentNode.parentDir;
+      }else{
+        dir = currentNode.getNextDir();
       }
-    } catch (e) {
-      map[lastLoc.x][lastLoc.y].next = dir;
-      return false;
     }
-    return false;
-  };
-
-
-  while(output !== 2 && n< 50) {
-    output = comp.runComp([dir])[0];
-    const attempt = updateLoc(dir);
-    if(output === 0){
-      updateMap(attempt, false);
-      if(past[past.length-1] === 1){
-        isRight = !isRight;
-      }
-    }else if (output === 1) {
-      updateMap(attempt, true);
-      if(!checkLast(dir)){
-        dir = getOpposite(dir);
-      };
-      lastLoc = currentLoc;
-      currentLoc = attempt;
-    }else if(output === 2){
-      console.log('Got It!!!');
-    }
-    dir = isRight ? turnRight(dir) : turnLeft(dir);
-    past.push(output);
     n++;
   }
-  console.log(map);
-  console.log(n);
-};
+  //#### For Shortest Distance
 
-const turnRight = (cur) => {
-  const dirs = [1,4,2,3];
-  if(dirs.indexOf(cur)===3){
-    return dirs[0]
-  };
-  return dirs[dirs.indexOf(cur)+1];
-};
-
-const turnLeft = (cur) => {
-  const dirs = [1,4,2,3];
-  if(dirs.indexOf(cur)===0){
-    return dirs[3]
-  };
-  return dirs[dirs.indexOf(cur)-1];
+  // let distance = 0;
+  // while(currentNode.parent && distance < n){
+  //   currentNode = currentNode.parent
+  //   distance++
+  // }
+  // console.log(distance);
 };
 
 const getOpposite = (dir) => {
@@ -127,7 +88,7 @@ const getOpposite = (dir) => {
     case 1:
       return 2;
     case 2:
-      return ;
+      return 1;
     case 3:
       return 4;
     case 4:
@@ -139,13 +100,23 @@ const getOpposite = (dir) => {
 }
 
 class Node {
-  constructor(x,y,parent, last){
+  constructor(x,y,parent, last, final){
+    this.final = final || false;
     this.location = {x,y};
     this.parent = parent;
     this.parentDir = last;
-    this.checked=[last]
+    this.suroundings={[last]:'parent'};
+    this.children = [];
   }
   isFull(){
-    return this.checked.length === 4
+    return Object.keys(this.suroundings).length === 4;
+  }
+  getNextDir(){
+    for (let i=1; i<5; i++){
+      if(this.suroundings[i] === undefined){
+        return i;
+      }
+    }
+    return this.parentDir;
   }
 }
