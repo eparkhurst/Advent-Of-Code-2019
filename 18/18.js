@@ -15,7 +15,7 @@ const findSteps = (map) => {
   const graph = getGraph(map);
   const allKeys = Object.keys(graph).reduce((p,c) => {
     if(/[a-z]/.test(c)) p++;
-    return p
+    return p;
   }, 0);
   const shortCached = {};
   console.log(getShortest({v:'@', d:0}, allKeys,[], graph, shortCached));
