@@ -11,7 +11,8 @@ fs.readFile('./data', 'utf-8', (err, data) => {
 
 const getPath = (map) => {
   const graph = getGraph(map);
-  console.log(findShortest('AAO', graph, [], 0));
+  console.log(graph);
+  console.log(findShortest('AAO', graph));
   console.timeEnd("dbsave");
 };
 
@@ -113,30 +114,34 @@ const getFirst = (x, y, map) => {
 };
 
 
-const findShortest = (start, graph, v, level) => {
-  if(level > 10) return Infinity;
-  const visited = [...v];
-  if(start === 'ZZO' && level === 0){
-    return 0;
-  }
+const findShortest = (start, graph,) => {
+  const visited = { };
+  const queue = [{loc: 'AAO', d:0, level:0 }];
+  while(queue.length){
+    if (queue.length > 10000) {
+      return 'Boo'
+    }
+    const current = queue.shift();
+    if(current.loc === 'ZZO' && current.level === 0){
+      return current.d;
+    }
+    if(visited[current.loc + current.level] < current.d) continue;
+    if(current.level===0 && current.loc !== 'AAO' && current.loc[2] === 'O') continue;
+    visited[current.loc + current.level] = current.d;
 
-  let best = Infinity;
-  for (let i = 0; i < graph[start].length; i++) {
-    let next = graph[start][i];
-    let nextLevel = level + getLevelChange(start, next.v);
-
-    if(nextLevel === 0 && next.v !== 'ZZO' && next.v[2] === 'O') continue;
-
-    if(visited.includes(next.v + nextLevel)) continue;
-    visited.push(next.v + nextLevel);
-
-    let dist = next.d;
-    dist += findShortest(next.v, graph, visited, nextLevel);
-    if(dist < best){
-      best = dist;
+    for (let i = 0; i < graph[current.loc].length; i++) {
+      if (visited[current.loc + current.level] < graph[current.loc][i]) {
+        continue;
+      }
+      queue.push({
+          loc: graph[current.loc][i].v,
+          d: current.d + graph[current.loc][i].d,
+          level: current.level + getLevelChange(current.loc, graph[current.loc][i].v),
+        }
+      )
     }
   }
-  return best
+  return 'Womp Womp';
 };
 
 const getLevelChange = (start, end) => {
@@ -144,4 +149,4 @@ const getLevelChange = (start, end) => {
     return start[2] === 'O' ? -1 : 1;
   }
   return 0;
-}
+};
