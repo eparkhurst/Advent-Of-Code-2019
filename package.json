@@ -7,7 +7,7 @@
   "dependencies": {
     "commander": "^4.1.1",
     "inquirer": "^7.1.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "prompt": "^1.0.0"
   }
 }
